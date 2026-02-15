@@ -130,3 +130,48 @@ catch {
 }
 
 Write-Host "`n✅ Setup PowerShell concluído com sucesso." -ForegroundColor Green
+
+$h = "$env:USERPROFILE\.pyenv\pyenv-win"
+$bin = Join-Path $h "bin"
+
+# 1) Faz backup dos wrappers que o PowerShell prioriza
+if (Test-Path "$bin\pyenv.ps1") { Rename-Item "$bin\pyenv.ps1" "$bin\pyenv.ps1.bak" -Force }
+if (Test-Path "$bin\pyenv")     { Rename-Item "$bin\pyenv"     "$bin\pyenv.bak"     -Force }
+
+# 2) Cria um wrapper PS1 "bom" que sempre chama o .bat (e trata o caso sem args)
+@'
+param([Parameter(ValueFromRemainingArguments=$true)]$Args)
+
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$bat  = Join-Path $here "pyenv.bat"
+
+if (-not (Test-Path $bat)) { throw "pyenv.bat não encontrado em: $bat" }
+
+if ($Args.Count -eq 0) {
+  & $bat commands
+  exit $LASTEXITCODE
+}
+
+& $bat @Args
+exit $LASTEXITCODE
+'@ | Set-Content -Encoding UTF8 -Path "$bin\pyenv.ps1"
+
+# 3) Valida
+Get-Command pyenv -All | Format-List Source,CommandType
+pyenv --version
+pyenv
+
+# --- pyenv-win ensure PATH (auto-heal) ---
+$h   = Join-Path $env:USERPROFILE ".pyenv\pyenv-win"
+$bin = Join-Path $h "bin"
+$shm = Join-Path $h "shims"
+
+if ((Test-Path $bin) -and (Test-Path $shm)) {
+  if ($env:Path -notlike "*$bin*") { $env:Path = "$bin;$env:Path" }
+  if ($env:Path -notlike "*$shm*") { $env:Path = "$shm;$env:Path" }
+}
+
+# 3) Valida
+Get-Command pyenv -All | Format-List Source,CommandType
+pyenv --version
+pyenv
