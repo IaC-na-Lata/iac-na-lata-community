@@ -86,7 +86,7 @@ Informe exatamente o mesmo usuário e senha definidos anteriormente na declaraç
 
 Após a conclusão completa do primeiro script, ainda no PowerShell como Administrador, execute:
 
-    .\03_tfenv_wrappers.ps1
+    .\02_tfenv_wrappers.ps1
 
 Este script:
 
