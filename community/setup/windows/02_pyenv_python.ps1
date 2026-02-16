@@ -175,3 +175,24 @@ if ((Test-Path $bin) -and (Test-Path $shm)) {
 Get-Command pyenv -All | Format-List Source,CommandType
 pyenv --version
 pyenv
+
+$root = "$env:USERPROFILE\.pyenv\pyenv-win"
+$bin  = "$root\bin"
+$shim = "$root\shims"
+
+# Define PYENV (opcional, mas ajuda consistência)
+[Environment]::SetEnvironmentVariable("PYENV", $root, "User")
+
+# Garante bin e shims no User PATH
+$userPath = [Environment]::GetEnvironmentVariable("Path","User")
+if (-not $userPath) { $userPath = "" }
+
+$parts = $userPath -split ';' | Where-Object { $_ -and $_.Trim() -ne "" }
+$want  = @($bin, $shim)
+
+foreach ($p in $want) {
+  if ($parts -notcontains $p) { $parts = @($p) + $parts }
+}
+
+$newPath = ($parts | Select-Object -Unique) -join ';'
+[Environment]::SetEnvironmentVariable("Path", $newPath, "User")
